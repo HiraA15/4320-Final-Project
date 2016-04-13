@@ -1,10 +1,12 @@
 import json
+import math
 from scipy import spatial
 
 
 #from pprint import pprint
 
 target = "business_data.txt"
+EarthRadius = 3959
 
 def loadData(infile):
     data = []
@@ -12,6 +14,15 @@ def loadData(infile):
         for line in inF:
             data.append(json.loads(line))
     return data
+    
+def haversine(a, b, R):
+    latDelta = a[0] - b[0]
+    lonDelta = a[1] - b[1]
+    a = math.pow(math.sin(latDelta/2), 2) +math.cos(a[0]) * math.cos(b[0]) * math.pow(math.sin(lonDelta/2),2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    d = R * c
+    return d
+    
 
 #TODO?: data as numpy array for cooler manipulation!
 class KDMap:
@@ -32,11 +43,10 @@ class KDMap:
         
         pass
 
-    #TODO: some sort of function to cull a subset for those with a given attribute
-    def contains(self, subset, category):
+    def contains(self, subset, field, value):
         result = []
         for i in subset:
-            if category in self.data[i]['categories']:
+            if value in self.data[i][field]:
                 result.append(i)
         return result
 
@@ -51,4 +61,6 @@ class KDMap:
 
 #TODO?: Commuting distance using google maps api
 
-#TODO: Parse for every category option
+#TODO?: query latitude/longitude from street address? (or other google maps api interaction)
+
+#test = KDMap(loadData(target))
