@@ -17,10 +17,10 @@ class KDMap:
                 self.data.append(json.loads(line))
                 locations.append([self.data[count]['latitude'], self.data[count]['longitude']])
                 count += 1
-        self.Map = spatial.cKDTree(locations)                
-                
+        self.Map = spatial.cKDTree(locations)
+
     def query(self, location, distance, categories):
-        
+
         pass
 
     #TODO: some sort of function to cull a subset for those with a given attribute
@@ -39,6 +39,19 @@ class KDMap:
 #rank results and return them
 
 #TODO: Distance using haversine formula
+    def haversineDist(begin, end):
+        lati1, long1 = begin
+        lati2, long2 = end
+        radius = 6501
+
+        dlati = math.radians(lati2-lati1)
+        dlongi = math.radians(long2-long1)
+        a = math.sin(dlati/2) * math.sin(dlati/2) + math.cos(math.radians(lati1)) \
+            * math.cos(math.radians(lati2)) * math.sin(dlong/2) * math.sin(dlong/2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        d = radius * c
+
+        return d
 
 #TODO?: Commuting distance using google maps api
 
