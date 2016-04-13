@@ -1,15 +1,40 @@
 import json
+import math
 from scipy import spatial
-
 
 #from pprint import pprint
 
 target = "business_data.txt"
+EarthRadius = 3959
+
+def loadData(infile):
+    data = []
+    with open(infile, 'r') as inF:
+        for line in inF:
+            data.append(json.loads(line))
+    return data
+
+def haversine(begin, end):
+    lati1, long1 = begin
+    lati2, long2 = end
+    radius = 6501
+
+    dlati = math.radians(lati2-lati1)
+    dlongi = math.radians(long2-long1)
+    a = math.sin(dlati/2) * math.sin(dlati/2) + math.cos(math.radians(lati1)) \
+        * math.cos(math.radians(lati2)) * math.sin(dlong/2) * math.sin(dlong/2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    d = radius * c
+
+    return d
+
 
 #TODO?: data as numpy array for cooler manipulation!
 class KDMap:
-    def __init__(self, target):
+    def __init__(self, data):
         self.data = []
+        self.cities = set()
+        self.categories = set()
         locations = []
         count = 0
         with open(target, 'r') as inF:
@@ -19,15 +44,22 @@ class KDMap:
                 count += 1
         self.Map = spatial.cKDTree(locations)
 
+        for entry in data:
+            self.data.append(entry)
+            locations.append([entry['latitude'], entry['longitude']])
+            self.cities.add(entry['city'])
+            for c in entry['categories']:
+                self.categories.add(c)
+        self.Map = spatial.cKDTree(locations)
+
     def query(self, location, distance, categories):
 
         pass
 
-    #TODO: some sort of function to cull a subset for those with a given attribute
-    def contains(self, subset, category):
+    def contains(self, subset, field, value):
         result = []
         for i in subset:
-            if category in self.data[i]['categories']:
+            if value in self.data[i][field]:
                 result.append(i)
         return result
 
@@ -39,20 +71,10 @@ class KDMap:
 #rank results and return them
 
 #TODO: Distance using haversine formula
-    def haversineDist(begin, end):
-        lati1, long1 = begin
-        lati2, long2 = end
-        radius = 6501
 
-        dlati = math.radians(lati2-lati1)
-        dlongi = math.radians(long2-long1)
-        a = math.sin(dlati/2) * math.sin(dlati/2) + math.cos(math.radians(lati1)) \
-            * math.cos(math.radians(lati2)) * math.sin(dlong/2) * math.sin(dlong/2)
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-        d = radius * c
-
-        return d
 
 #TODO?: Commuting distance using google maps api
 
-#TODO: Parse for every category option
+#TODO?: query latitude/longitude from street address? (or other google maps api interaction)
+
+#test = KDMap(loadData(target))
