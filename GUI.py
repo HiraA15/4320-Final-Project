@@ -9,6 +9,8 @@ import sys
 from PySide import QtGui
 from PySide import QtCore
 
+import data_loader
+
 app = QtGui.QApplication(sys.argv)
 
 '''
