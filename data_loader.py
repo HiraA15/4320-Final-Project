@@ -6,17 +6,26 @@ from scipy import spatial
 
 target = "business_data.txt"
 
+def loadData(infile):
+    data = []
+    with open(infile, 'r') as inF:
+        for line in inF:
+            data.append(json.loads(line))
+    return data
+
 #TODO?: data as numpy array for cooler manipulation!
 class KDMap:
-    def __init__(self, target):
+    def __init__(self, data):
         self.data = []
+        self.cities = set()
+        self.categories = set()
         locations = []
-        count = 0
-        with open(target, 'r') as inF:
-            for line in inF:
-                self.data.append(json.loads(line))
-                locations.append([self.data[count]['latitude'], self.data[count]['longitude']])
-                count += 1
+        for entry in data:
+            self.data.append(entry)
+            locations.append([entry['latitude'], entry['longitude']])
+            self.cities.add(entry['city'])
+            for c in entry['categories']:
+                self.categories.add(c)
         self.Map = spatial.cKDTree(locations)                
                 
     def query(self, location, distance, categories):
