@@ -2,4 +2,6 @@
 
 Our main algorithm will use scipy.kd. The dependencies are scipy and PySide. 
 
-In order to use the program, just make sure you have a Python IDE open.
+In order to use the program, make sure you have a Python IDE open.
+
+The main goal is to achieve a program that will utilize Google's Python API and be able to locate businesses, etc using clusters, possibly by K Means.
