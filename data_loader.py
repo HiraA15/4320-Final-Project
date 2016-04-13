@@ -28,7 +28,6 @@ def haversine(begin, end):
 
     return d
 
-
 #TODO?: data as numpy array for cooler manipulation!
 class KDMap:
     def __init__(self, data):
@@ -69,9 +68,6 @@ class KDMap:
 #first step: use KDTree to cull the dataset down to only locations in the area
 #next, find closest neighbors that fit the criteria (brute force it)
 #rank results and return them
-
-#TODO: Distance using haversine formula
-
 
 #TODO?: Commuting distance using google maps api
 
