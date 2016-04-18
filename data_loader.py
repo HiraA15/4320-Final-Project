@@ -2,9 +2,6 @@ import json
 import math
 from scipy import spatial
 
-
-#from pprint import pprint
-
 target = "business_data.txt"
 EarthRadius = 3959
 
@@ -46,12 +43,20 @@ class KDMap:
         for category in categories:
             subsetsByCategory[category] = self.contains(potentialBusinessSet, 'categories', category)
         
+        #TODO?: Return distances?
         #if there are more than a single category, find the closest clusters within the categories
-        #Hrm.... should I think of something more efficient than brute force comparisons
-        results = self.groupings(subsetsByCategory)
+        if(len(categories) == 0):
+            return potentialBusinessSet
+        elif(len(categories) == 1):
+            return subsetsByCategory[0]
+        else:
+            KDMaps = self.groupings(subsetsByCategory)
+            
+            results = self.unorderedMinimum(KDMaps, potentialBusinessSet)
+            #TODO: based on query type, either look for unordered minimums or ordered minimum groupings
+            #TODO: sort groupings?
+            return results
         
-        #TODO: sort groupings?
-        return results
        
     def contains(self, subset, field, value):
         result = []
@@ -61,19 +66,59 @@ class KDMap:
         return result
 
     #TODO!: returns a ranked list of groupings where there is one element from each set
-    def groupings(self, sets):
+    def groupings(self, groups):
         #TODO: Maybe make a new KDTree for some of the groupings and query for nearest at each location?
-        #IDEA!: Make a KDTree for every category type?  Maybe figure out merges?
-            #Important note: each new KDTree needs a mapping to the main data (since the numberings will be for the subset)
-        pass
+        KDMaps = []
+        
+        for group in groups:
+            locations = []
+            for index in group:
+                entry = self.data[index]
+                locations.append([entry['latitude'], entry['longitude']])
+            KDMaps.append(spatial.cKDTree(locations))
+        
+        return KDMaps
+        
+       
 
+
+    #Now we have our KDMaps, and groups to hold the linking indicies to 
+    #For each point in one of the sets, find the nearest point from every other set
+    #For all points in each in-progress group, find the closest point of the new type to add to the group
+    def unorderedMinimum(self, groupings, links):
+        self.Map.query
+        results = []
+        for i, seed in enumerate(groupings[0].data):
+            points = [seed]
+            totalDist = 0
+            for KDTree in groupings[1:]:
+                nearest = []
+                distance = float("inf")
+                #TODO!!: Fix this.  If the 3rd location is between the first two, the distance calculation is wrong...
+                    #Either recalculate distance after points are chosen or use some sort of centroid approach?
+                for point in points:
+                    d, n = KDTree.query(point)
+                    if d < distance:
+                        distance = d
+                        nearest = n
+                points.append(nearest)
+                totalDist
+        #Get first location, query into first group
+        #query first and second into third group
+        #query 1,2,3 into next... etc.
+        pass
+    
+    #TODO: Ordered query, modify the search for business types in-order!
+    #This means that you intend to visit each business category in the order they were given, rather than just checking overall proximity
+    def orderedMinimum(self, groupings):
+        pass
+    
+    
 #TODO: Advanced query
 #input = location to focus on, categories to look for
 #first step: use KDTree to cull the dataset down to only locations in the area
 #next, find closest neighbors that fit the criteria (brute force it)
 #rank results and return them
-
-#TODO: Distance using haversine formula
 
 #TODO?: Commuting distance using google maps api
 
