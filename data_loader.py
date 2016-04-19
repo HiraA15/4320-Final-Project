@@ -35,15 +35,18 @@ class KDMap:
                 self.categories.add(c)
         self.Map = spatial.cKDTree(locations)                
                 
+    #TODO?:  Maybe build a query that just uses cull-by-city?
+                
     def query(self, location, radius, categories):
         #get all businesses in radius!!!
-        distances, potentialBusinessSet = self.Map.query_ball_point(location, radius)
+        potentialBusinessSet = self.Map.query_ball_point(location, radius)
         #Categorize businesses in radius by interested category tags
-        subsetsByCategory = {}
+        subsetsByCategory = []
         for category in categories:
-            subsetsByCategory[category] = self.contains(potentialBusinessSet, 'categories', category)
+            subsetsByCategory.append(self.contains(potentialBusinessSet, 'categories', category))
         
-        #TODO?: Return distances?
+        #TODO: Some sort of query abort if one of the categories has none of that business type in the region
+        
         #if there are more than a single category, find the closest clusters within the categories
         if(len(categories) == 0):
             return potentialBusinessSet
@@ -52,9 +55,10 @@ class KDMap:
         else:
             KDMaps = self.groupings(subsetsByCategory)
             
-            results = self.unorderedMinimum(KDMaps, potentialBusinessSet)
-            #TODO: based on query type, either look for unordered minimums or ordered minimum groupings
-            #TODO: sort groupings?
+            
+            results = self.unorderedMinimum(KDMaps, subsetsByCategory)
+            
+            #TODO?: sort by distance to initial location, as well as cluster tightness?
             return results
         
        
@@ -65,11 +69,10 @@ class KDMap:
                 result.append(i)
         return result
 
-    #TODO!: returns a ranked list of groupings where there is one element from each set
+    #Returns the KDTrees of the given groups
     def groupings(self, groups):
-        #TODO: Maybe make a new KDTree for some of the groupings and query for nearest at each location?
+        #Make a new KDTree for some of the groupings and query for nearest at each location?
         KDMaps = []
-        
         for group in groups:
             locations = []
             for index in group:
@@ -78,37 +81,41 @@ class KDMap:
             KDMaps.append(spatial.cKDTree(locations))
         
         return KDMaps
-        
-       
-
-
+     
     #Now we have our KDMaps, and groups to hold the linking indicies to 
     #For each point in one of the sets, find the nearest point from every other set
     #For all points in each in-progress group, find the closest point of the new type to add to the group
     def unorderedMinimum(self, groupings, links):
+        print links
         self.Map.query
         results = []
-        for i, seed in enumerate(groupings[0].data):
-            points = [seed]
+        for i in range(len(groupings[0].data)):
+            points = [(0, i)]
             totalDist = 0
-            for KDTree in groupings[1:]:
-                nearest = []
+            remaining = range(len(groupings))[1:]
+            while len(remaining) > 0:
+                #For each point in points, search each remaining group for the closest next business to add
+                nearestPoint = (-1, -1)
                 distance = float("inf")
-                #TODO!!: Fix this.  If the 3rd location is between the first two, the distance calculation is wrong...
-                    #Either recalculate distance after points are chosen or use some sort of centroid approach?
-                for point in points:
-                    d, n = KDTree.query(point)
-                    if d < distance:
-                        distance = d
-                        nearest = n
-                points.append(nearest)
-                totalDist
-        #Get first location, query into first group
-        #query first and second into third group
-        #query 1,2,3 into next... etc.
-        pass
+                for group, index in points:
+                    for r in remaining:
+                        d, n = groupings[r].query(groupings[group].data[index])
+                        if d < distance:
+                            distance = d
+                            nearestPoint = (r, n)
+                remaining.remove(nearestPoint[0])
+                points.append(nearestPoint)
+                totalDist += distance
+            #Convert back to global indicies
+            complete = []
+            for group, index in points:
+                complete.append(links[group][index])
+            results.append((complete, totalDist))
+        
+        #return results sorted by total distance (cluster tightness)
+        return sorted(results, key=lambda group: group[1])
     
-    #TODO: Ordered query, modify the search for business types in-order!
+    #TODO?: Ordered query, modify the search for business types in-order!
     #This means that you intend to visit each business category in the order they were given, rather than just checking overall proximity
     def orderedMinimum(self, groupings):
         pass
