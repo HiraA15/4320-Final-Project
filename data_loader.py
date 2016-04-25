@@ -43,7 +43,7 @@ class KDMap:
         #Categorize businesses in radius by interested category tags
         subsetsByCategory = []
         for category in categories:
-            subsetsByCategory.append(self.contains(potentialBusinessSet, 'categories', category))
+            subsetsByCategory.append(self._contains(potentialBusinessSet, 'categories', category))
         
         #TODO: Some sort of query abort if one of the categories has none of that business type in the region
         
@@ -53,16 +53,24 @@ class KDMap:
         elif(len(categories) == 1):
             return subsetsByCategory[0]
         else:
-            KDMaps = self.groupings(subsetsByCategory)
+            KDMaps = self._groupings(subsetsByCategory)
             
             
-            results = self.unorderedMinimum(KDMaps, subsetsByCategory)
+            clusters = self._unorderedMinimum(KDMaps, subsetsByCategory)
             
             #TODO?: sort by distance to initial location, as well as cluster tightness?
+            
+            #Convert indicies back to data entries
+            results = []
+            for cluster in clusters:
+                c = []
+                for index in cluster[0]:
+                    c.append(self.data[index])
+                results.append((c, cluster[1]))
             return results
-        
+    
        
-    def contains(self, subset, field, value):
+    def _contains(self, subset, field, value):
         result = []
         for i in subset:
             if value in self.data[i][field]:
@@ -70,7 +78,7 @@ class KDMap:
         return result
 
     #Returns the KDTrees of the given groups
-    def groupings(self, groups):
+    def _groupings(self, groups):
         #Make a new KDTree for some of the groupings and query for nearest at each location?
         KDMaps = []
         for group in groups:
@@ -85,7 +93,7 @@ class KDMap:
     #Now we have our KDMaps, and groups to hold the linking indicies to 
     #For each point in one of the sets, find the nearest point from every other set
     #For all points in each in-progress group, find the closest point of the new type to add to the group
-    def unorderedMinimum(self, groupings, links):
+    def _unorderedMinimum(self, groupings, links):
         print links
         self.Map.query
         results = []
@@ -122,7 +130,7 @@ class KDMap:
     
     
 #TODO: Advanced query
-#input = location to focus on, categories to look for
+#input = location to focus on, categories to look for 
 #first step: use KDTree to cull the dataset down to only locations in the area
 #next, find closest neighbors that fit the criteria (brute force it)
 #rank results and return them

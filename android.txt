@@ -1,0 +1,3 @@
+title=Hello World
+author=Austin Finlinson
+orientation=landscape
