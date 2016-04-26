@@ -34,18 +34,28 @@ class KDMap:
             for c in entry['categories']:
                 self.categories.add(c)
         self.Map = spatial.cKDTree(locations)                
+    
+    def rAll(self):
+        return range(len(self.data))            
                 
-    #TODO?:  Maybe build a query that just uses cull-by-city?
-                
-    def query(self, location, radius, categories):
-        #get all businesses in radius!!!
-        potentialBusinessSet = self.Map.query_ball_point(location, radius)
+    def query(self, location, categories, radius=.1):
+        if type(location) == type("string"):
+            #TODO?: input string parsing for non-exact matches
+        
+            #Cull-by-city
+            potentialBusinessSet = self._contains(range(len(self.data)), 'city', location)
+        else:
+            #get all businesses in radius!!!
+            potentialBusinessSet = self.Map.query_ball_point(location, radius)
+        
         #Categorize businesses in radius by interested category tags
         subsetsByCategory = []
         for category in categories:
-            subsetsByCategory.append(self._contains(potentialBusinessSet, 'categories', category))
+            subset = self._contains(potentialBusinessSet, 'categories', category)
+            if len(subset) > 0:
+                subsetsByCategory.append(subset)
         
-        #TODO: Some sort of query abort if one of the categories has none of that business type in the region
+        #TODO?: Some sort of query abort if one of the categories has none of that business type in the region
         
         #if there are more than a single category, find the closest clusters within the categories
         if(len(categories) == 0):
@@ -55,7 +65,7 @@ class KDMap:
         else:
             KDMaps = self._groupings(subsetsByCategory)
             
-            
+            print KDMaps
             clusters = self._unorderedMinimum(KDMaps, subsetsByCategory)
             
             #TODO?: sort by distance to initial location, as well as cluster tightness?
@@ -67,8 +77,21 @@ class KDMap:
                 for index in cluster[0]:
                     c.append(self.data[index])
                 results.append((c, cluster[1]))
-            return results
+            return results 
     
+    def significantCities(self, subset, cutoff):
+        return self.significantData(subset, self.cities, "city", cutoff)
+    
+    def significantCategories(self, subset, cutoff):
+        return self.significantData(subset, self.categories, "categories", cutoff)
+    
+    def significantData(self, subset, category_sets, field, cutoff):
+        results = []
+        for c in category_sets:
+            r = self._contains(subset, field, c)
+            if len(r) >= cutoff:
+                results.append((len(r), c))
+        return results
        
     def _contains(self, subset, field, value):
         result = []
@@ -97,6 +120,7 @@ class KDMap:
         print links
         self.Map.query
         results = []
+        #TODO: Use the group of lowest length, not just an arbitrary one
         for i in range(len(groupings[0].data)):
             points = [(0, i)]
             totalDist = 0
@@ -122,18 +146,6 @@ class KDMap:
         
         #return results sorted by total distance (cluster tightness)
         return sorted(results, key=lambda group: group[1])
-    
-    #TODO?: Ordered query, modify the search for business types in-order!
-    #This means that you intend to visit each business category in the order they were given, rather than just checking overall proximity
-    def orderedMinimum(self, groupings):
-        pass
-    
-    
-#TODO: Advanced query
-#input = location to focus on, categories to look for 
-#first step: use KDTree to cull the dataset down to only locations in the area
-#next, find closest neighbors that fit the criteria (brute force it)
-#rank results and return them
 
 #TODO?: Commuting distance using google maps api
 
