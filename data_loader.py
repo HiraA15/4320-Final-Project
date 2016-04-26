@@ -41,9 +41,12 @@ class KDMap:
     def query(self, location, categories, radius=.1):
         if type(location) == type("string"):
             #TODO?: input string parsing for non-exact matches
-        
-            #Cull-by-city
-            potentialBusinessSet = self._contains(range(len(self.data)), 'city', location)
+            #Check that location is in the cities set
+            if location in self.cities:
+                #Cull-by-city
+                potentialBusinessSet = self._contains(range(len(self.data)), 'city', location)
+            else:
+                print "The City: " + location + " is unknown!"
         else:
             #get all businesses in radius!!!
             potentialBusinessSet = self.Map.query_ball_point(location, radius)
@@ -51,9 +54,13 @@ class KDMap:
         #Categorize businesses in radius by interested category tags
         subsetsByCategory = []
         for category in categories:
-            subset = self._contains(potentialBusinessSet, 'categories', category)
-            if len(subset) > 0:
-                subsetsByCategory.append(subset)
+            #Check that all categories are valid
+            if category in self.categories:
+                subset = self._contains(potentialBusinessSet, 'categories', category)
+                if len(subset) > 0:
+                    subsetsByCategory.append(subset)
+            else:
+                print "The category: " + category + " is unknown!"
         
         #TODO?: Some sort of query abort if one of the categories has none of that business type in the region
         
@@ -120,7 +127,7 @@ class KDMap:
         print links
         self.Map.query
         results = []
-        #TODO: Use the group of lowest length, not just an arbitrary one
+        #TODO!: Use the group of lowest length, not just an arbitrary one
         for i in range(len(groupings[0].data)):
             points = [(0, i)]
             totalDist = 0
