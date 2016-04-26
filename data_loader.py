@@ -39,7 +39,7 @@ class KDMap:
         return range(len(self.data))            
                 
     def query(self, location, categories, radius=.1):
-        if type(location) == type("string"):
+        if type(location) == type(u"string") or type(location) == type("string"):
             #TODO?: input string parsing for non-exact matches
             #Check that location is in the cities set
             if location in self.cities:
@@ -72,7 +72,6 @@ class KDMap:
         else:
             KDMaps = self._groupings(subsetsByCategory)
             
-            print KDMaps
             clusters = self._unorderedMinimum(KDMaps, subsetsByCategory)
             
             #TODO?: sort by distance to initial location, as well as cluster tightness?
@@ -124,14 +123,23 @@ class KDMap:
     #For each point in one of the sets, find the nearest point from every other set
     #For all points in each in-progress group, find the closest point of the new type to add to the group
     def _unorderedMinimum(self, groupings, links):
-        print links
         self.Map.query
         results = []
-        #TODO!: Use the group of lowest length, not just an arbitrary one
-        for i in range(len(groupings[0].data)):
-            points = [(0, i)]
+        
+        #Use the group of lowest length
+        u = 0
+        low = int("inf")
+        for group in groupings:
+            l = len(group)
+            if l < low:
+                low = l
+                u = group
+        
+        for i in range(len(groupings[u].data)):
+            points = [(u, i)]
             totalDist = 0
-            remaining = range(len(groupings))[1:]
+            remaining = range(len(groupings))
+            remaining.remove(u)
             while len(remaining) > 0:
                 #For each point in points, search each remaining group for the closest next business to add
                 nearestPoint = (-1, -1)
@@ -157,5 +165,3 @@ class KDMap:
 #TODO?: Commuting distance using google maps api
 
 #TODO?: query latitude/longitude from street address? (or other google maps api interaction)
-
-test = KDMap(loadData(target))
